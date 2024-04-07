@@ -1,42 +1,41 @@
 #!/usr/bin/env python3
 
 import sys
-import threading
+import random
+
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+def pollards_rho(n):
+    x, y = random.randint(1, n-1), 1
+    f = lambda x: (x**2 + 1) % n
+    while True:
+        x = f(x)
+        y = f(f(y))
+        d = gcd(abs(x - y), n)
+        if d != 1:
+            return d
 
 def factorize(n):
     factors = []
-    i = 2
-    while i * i <= n:
-        if n % i:
-            i += 1
+    while n != 1:
+        if n % 2 == 0:
+            factors.append(2)
+            n //= 2
         else:
-            n //= i
-            factors.append(i)
-    if n > 1:
-        factors.append(n)
+            factor = pollards_rho(n)
+            factors.append(factor)
+            n //= factor
     return factors
-
-def factorize_numbers(numbers):
-    for n in numbers:
-        factorization = factorize(n)
-        print(f"{n}={'*'.join(map(str, factorization))}")
 
 def main(filename):
     with open(filename, 'r') as file:
-        numbers = [int(line.strip()) for line in file]
-    
-    # Split numbers into chunks for parallel processing
-    chunk_size = len(numbers) // 4
-    chunks = [numbers[i:i+chunk_size] for i in range(0, len(numbers), chunk_size)]
-    
-    threads = []
-    for chunk in chunks:
-        thread = threading.Thread(target=factorize_numbers, args=(chunk,))
-        thread.start()
-        threads.append(thread)
-    
-    for thread in threads:
-        thread.join()
+        for line in file:
+            n = int(line.strip())
+            factorization = factorize(n)
+            print(f"{n}={'*'.join(map(str, factorization))}")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -45,4 +44,3 @@ if __name__ == "__main__":
         sys.exit(1)
     filename = sys.argv[1]
     main(filename)
-
